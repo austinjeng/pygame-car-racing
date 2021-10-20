@@ -5,6 +5,7 @@ import math
 import os
 from pygame import image
 from pygame.constants import QUIT
+from pygame.version import ver
 from utils import scale_image, blit_rotate_center
 
 
@@ -35,6 +36,7 @@ class AbstractCar:
         self.rotation_vel = rotation_vel
         self.angle = 0
         self.x, self.y = self.START_POS
+        self.acceleraiton = 0.04
 
     def rotate(self, left = False, right = False):
         if left:
@@ -44,6 +46,23 @@ class AbstractCar:
 
     def draw(self, win):
         blit_rotate_center(win, self.img, (self.x, self.y), self.angle)
+
+    def move_forward(self):
+        self.vel = min(self.vel + self.acceleraiton, self.max_vel)
+        self.move()
+    
+    def move(self):
+        radians = math.radians(self.angle)
+        vertical = math.cos(radians) * self.vel
+        horizontal = math.sin(radians) * self.vel
+
+        self.y -= vertical
+        self.x -= horizontal
+
+    def reduce_speed(self):
+        self.vel = max(self.vel - self.acceleraiton/2, 0)
+        self.move()
+
 
 class PlayerCar(AbstractCar):
     IMG = RED_CAR
@@ -61,7 +80,7 @@ def draw(win, images, player_car):
 run = True
 clock = pygame.time.Clock()
 images = [(GRASS, (0, 0)), (TRACK, (0, 0))]
-player_car = PlayerCar(4, 4)
+player_car = PlayerCar(3, 4)
 
 
 while run:
@@ -76,11 +95,17 @@ while run:
             break
 
     keys = pygame.key.get_pressed()
+    moved = False
 
     if keys[pygame.K_a]:
         player_car.rotate(left=True)
     if keys[pygame.K_d]:
         player_car.rotate(right=True)
+    if keys[pygame.K_w]:
+        moved = True
+        player_car.move_forward()
 
+    if not moved:
+        player_car.reduce_speed()
 
 pygame.quit()
